@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Living Room Interaction Teardown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+            --glass-bg: rgba(20, 20, 20, 0.25);
+            --glass-card-bg: rgba(30, 30, 30, 0.35);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+            background-color: #000000;
+            color: #f5f5f7;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        /* Ambient Mesh Background */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: #000000;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.4;
+            animation: float 25s infinite ease-in-out alternate;
+            mix-blend-mode: screen;
+        }
+
+        .orb-1 {
+            top: -20%;
+            left: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(10,132,255,0.8) 0%, rgba(0,0,0,0) 70%);
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            bottom: -20%;
+            right: -10%;
+            width: 70vw;
+            height: 70vw;
+            background: radial-gradient(circle, rgba(191,90,242,0.6) 0%, rgba(0,0,0,0) 70%);
+            animation-delay: -7s;
+        }
+
+        .orb-3 {
+            top: 30%;
+            left: 50%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(48,209,88,0.5) 0%, rgba(0,0,0,0) 70%);
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(8%, 12%) scale(1.15); }
+        }
+
+        /* Apple Liquid Glass Utilities */
+        .liquid-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 1px 1px var(--glass-highlight),
+                        0 20px 40px -10px rgba(0, 0, 0, 0.7);
+        }
+
+        .liquid-card {
+            background: var(--glass-card-bg);
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1),
+                        0 10px 30px -5px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background 0.4s ease;
+        }
+
+        .liquid-card:hover {
+            transform: translateY(-4px) scale(1.005);
+            background: rgba(45, 45, 45, 0.4);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15),
+                        0 20px 40px -10px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .liquid-step {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* Segmented Control (Tabs) */
+        .segmented-control {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+            padding: 4px;
+            display: inline-flex;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .segment-btn {
+            padding: 8px 24px;
+            border-radius: 99px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #86868b;
+        }
+
+        .segment-active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .segment-btn:not(.segment-active):hover {
+            color: #d2d2d7;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Timeline Styles */
+        .timeline-container {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            bottom: 24px;
+            width: 2px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+            border-radius: 2px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -2rem;
+            top: 0.5rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(20, 20, 20, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
+            z-index: 10;
+        }
+
+        /* Accents */
+        .glow-xbox .timeline-dot { border-color: rgba(48, 209, 88, 0.6); box-shadow: 0 0 15px rgba(48, 209, 88, 0.3); }
+        .glow-nex .timeline-dot { border-color: rgba(10, 132, 255, 0.6); box-shadow: 0 0 15px rgba(10, 132, 255, 0.3); }
+        .glow-switch .timeline-dot { border-color: rgba(255, 69, 58, 0.6); box-shadow: 0 0 15px rgba(255, 69, 58, 0.3); }
+
+        /* Typography Polish */
+        h1, h2, h3, h4 { letter-spacing: -0.02em; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 20px; border: 3px solid #000; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* Table Refinements */
+        th, td { border-color: rgba(255, 255, 255, 0.06) !important; }
+        thead tr { background: rgba(0, 0, 0, 0.2) !important; }
+        tbody tr:hover { background: rgba(255, 255, 255, 0.03) !important; }
+    </style>
+</head>
+<body class="p-4 md:p-8 antialiased">
+
+    <!-- Ambient Lighting -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 max-w-7xl mx-auto liquid-panel rounded-[2.5rem] overflow-hidden">
+        
+        <!-- Header -->
+        <header class="p-8 md:p-12 border-b border-white/5 relative overflow-hidden">
+            <div class="relative z-10">
+                <h1 class="text-4xl md:text-5xl font-semibold mb-3 tracking-tight text-white">Living Room Battle</h1>
+                <h2 class="text-xl md:text-2xl font-normal text-gray-400 mb-4">Granular Interaction Teardown</h2>
+                <p class="text-gray-400 max-w-3xl leading-relaxed text-sm md:text-base font-light">An exhaustive analysis of interaction paradigms and friction points comparing Heavy Core Consoles like the Xbox Series X, Lightweight Casual Systems like the NEX Playground, and Hybrid Systems like the Nintendo Switch 2.</p>
+            </div>
+            <!-- Subtle header highlight -->
+            <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="px-8 pt-8 flex justify-center md:justify-start">
+            <div class="segmented-control">
+                <button onclick="switchTab('flowcharts')" id="tab-flowcharts" class="segment-btn segment-active">
+                    <i data-lucide="git-merge" class="w-4 h-4 mr-2"></i> User Task Flows
+                </button>
+                <button onclick="switchTab('comparison')" id="tab-comparison" class="segment-btn">
+                    <i data-lucide="table" class="w-4 h-4 mr-2"></i> Hardware & Paradigm Matrix
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-8 md:p-12">
+            
+            <!-- SECTION 1: FLOWCHARTS -->
+            <div id="content-flowcharts" class="block space-y-20">
+                
+                <!-- Flow 1: Invitation -->
+                <div>
+                    <div class="mb-10">
+                        <h2 class="text-2xl font-semibold mb-2 flex items-center text-white"><i data-lucide="users" class="w-6 h-6 mr-3 text-blue-400"></i> 1. Social Task Flow: The Invitation & Teaming Process</h2>
+                        <p class="text-gray-400 font-light text-sm">Contrasting Digital Asynchrony with Physical Synchrony when transitioning an individual user into a collective, synchronized gaming state.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Xbox Flow -->
+                        <div class="liquid-card rounded-3xl p-6 glow-xbox flex flex-col h-full">
+                            <div class="mb-8">
+                                <h3 class="font-semibold text-lg text-white mb-1">Xbox Series X</h3>
+                                <p class="text-xs text-gray-400 font-medium tracking-wide uppercase mb-3">Digital Asynchrony</p>
+                                <span class="px-3 py-1 bg-black/40 border border-red-500/30 text-red-400 rounded-full text-xs font-medium shadow-[0_0_10px_rgba(239,68,68,0.15)] backdrop-blur-md">High Friction</span>
+                            </div>
+                            
+                            <div class="timeline-container flex-grow">
+                                <div class="timeline-line"></div>
+                                <div class="relative mb-5"><div class="timeline-dot">1</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Intentionally pause the active gameplay session.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">2</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Open the overarching Xbox Guide overlay known as the TCUI.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">3</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Navigate laterally to the designated People tab.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">4</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Scroll through a potentially massive, algorithmically sorted friends list.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">5</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Locate a specific user profile and open the contextual actions menu.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot text-red-300 border-red-500/50">6</div><div class="liquid-step p-3 rounded-xl border-red-500/20 bg-red-500/5"><p class="text-sm text-red-200">Execute the Invite to Game digital command.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">7</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">The recipient must manually accept an asynchronous toast notification.</p></div></div>
+                                <div class="relative"><div class="timeline-dot text-red-300 border-red-500/50">8</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">System attempts fragile server matchmaking, vulnerable to NAT conflicts.</p></div></div>
+                            </div>
+                        </div>
+
+                        <!-- NEX Flow -->
+                        <div class="liquid-card rounded-3xl p-6 glow-nex flex flex-col h-full relative">
+                            <div class="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent rounded-3xl pointer-events-none"></div>
+                            <div class="mb-8 relative z-10">
+                                <h3 class="font-semibold text-lg text-white mb-1">NEX Playground</h3>
+                                <p class="text-xs text-gray-400 font-medium tracking-wide uppercase mb-3">Communal Kinetics</p>
+                                <span class="px-3 py-1 bg-black/40 border border-blue-500/30 text-blue-400 rounded-full text-xs font-medium shadow-[0_0_10px_rgba(10,132,255,0.15)] backdrop-blur-md">Zero Friction</span>
+                            </div>
+                            
+                            <div class="timeline-container flex-grow relative z-10">
+                                <div class="timeline-line"></div>
+                                <div class="relative mb-5"><div class="timeline-dot">1</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Identify a desire to play with a bystander in the physical room.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">2</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Verbally invite the friend without any digital interface navigation.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">3</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">The bystander steps within the 180-degree wide-angle camera view.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot text-blue-300 border-blue-500/50">4</div><div class="liquid-step p-3 rounded-xl border-blue-500/20 bg-blue-500/5"><p class="text-sm text-blue-200">AI algorithms instantly recognize the new human skeletal structure.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">5</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">The system dynamically assigns a designated player slot.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot text-blue-300 border-blue-500/50">6</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Continuous tracking of 18 specific skeletal points begins automatically.</p></div></div>
+                                <div class="relative"><div class="timeline-dot">7</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">The player is instantly integrated via true drop-in elasticity.</p></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Switch 2 Flow -->
+                        <div class="liquid-card rounded-3xl p-6 glow-switch flex flex-col h-full">
+                            <div class="mb-8">
+                                <h3 class="font-semibold text-lg text-white mb-1">Nintendo Switch 2</h3>
+                                <p class="text-xs text-gray-400 font-medium tracking-wide uppercase mb-3">Hybrid Middle-State</p>
+                                <span class="px-3 py-1 bg-black/40 border border-yellow-500/30 text-yellow-400 rounded-full text-xs font-medium shadow-[0_0_10px_rgba(250,204,21,0.1)] backdrop-blur-md">Context Aware</span>
+                            </div>
+                            
+                            <div class="timeline-container flex-grow">
+                                <div class="timeline-line"></div>
+                                <div class="relative mb-5"><div class="timeline-dot">1</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Identify the need to form a connected social group.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">2</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Press the dedicated physical C Button on the hardware controller.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot text-yellow-300 border-yellow-500/50">3</div><div class="liquid-step p-3 rounded-xl border-yellow-500/20 bg-yellow-500/5"><p class="text-sm text-yellow-200">The GameChat UI instantly overlays the active application.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">4</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Select friends for persistent cross-game voice party formation.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot">5</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Initiate the local wireless verification handshake protocol.</p></div></div>
+                                <div class="relative mb-5"><div class="timeline-dot text-yellow-300 border-yellow-500/50">6</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">The system seamlessly bridges consoles via ad-hoc local Wi-Fi.</p></div></div>
+                                <div class="relative"><div class="timeline-dot">7</div><div class="liquid-step p-3 rounded-xl"><p class="text-sm text-gray-200">Audio communication opens via built-in noise-canceling microphones.</p></div></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+                <!-- Flow 2: Sharing -->
+                <div>
+                    <div class="mb-10">
+                        <h2 class="text-2xl font-semibold mb-2 flex items-center text-white"><i data-lucide="share-2" class="w-6 h-6 mr-3 text-purple-400"></i> 2. The Content Sharing Flow</h2>
+                        <p class="text-gray-400 font-light text-sm">How system architectures manage the extraction of digital highlights into real-world social networks and smartphones.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <div class="liquid-card rounded-3xl p-6 glow-xbox">
+                            <div class="flex items-center mb-6">
+                                <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mr-4 shadow-inner">
+                                    <i data-lucide="lock" class="w-4 h-4 text-gray-300"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-white">Xbox</h4>
+                                    <p class="text-xs text-gray-400">Captive Cloud Ecosystem</p>
+                                </div>
+                            </div>
+                            <div class="timeline-container">
+                                <div class="timeline-line"></div>
+                                <div class="relative mb-4"><div class="timeline-dot">1</div><p class="text-sm text-gray-300 ml-2 mt-1">Trigger capture via the dedicated controller Share button.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">2</div><p class="text-sm text-gray-300 ml-2 mt-1">The operating system processes the DVR video footage.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">3</div><p class="text-sm text-gray-300 ml-2 mt-1">System automatically uploads data to the Xbox Live Activity Feed.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">4</div><p class="text-sm text-gray-300 ml-2 mt-1">User must locate their personal smartphone device.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot text-red-300 border-red-500/50">5</div><p class="text-sm text-red-200 ml-2 mt-1">User opens the proprietary Xbox mobile application.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot text-red-300 border-red-500/50">6</div><p class="text-sm text-gray-300 ml-2 mt-1">Wait for cloud servers to synchronize heavy video files.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">7</div><p class="text-sm text-gray-300 ml-2 mt-1">Manually download the video to the local device camera roll.</p></div>
+                                <div class="relative"><div class="timeline-dot">8</div><p class="text-sm text-gray-300 ml-2 mt-1">Upload the native file to external social media platforms.</p></div>
+                            </div>
+                        </div>
+
+                        <div class="liquid-card rounded-3xl p-6 glow-nex">
+                            <div class="flex items-center mb-6">
+                                <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mr-4 shadow-inner">
+                                    <i data-lucide="smartphone" class="w-4 h-4 text-gray-300"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-white">NEX Playground</h4>
+                                    <p class="text-xs text-gray-400">The QR Handshake</p>
+                                </div>
+                            </div>
+                            <div class="timeline-container">
+                                <div class="timeline-line"></div>
+                                <div class="relative mb-4"><div class="timeline-dot">1</div><p class="text-sm text-gray-300 ml-2 mt-1">The active gameplay session naturally concludes.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot text-blue-300 border-blue-500/50">2</div><p class="text-sm text-blue-200 ml-2 mt-1">System AI automatically curates a highlight reel of physical reactions.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">3</div><p class="text-sm text-gray-300 ml-2 mt-1">The system generates a secure web link for the media.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot text-blue-300 border-blue-500/50">4</div><p class="text-sm text-gray-300 ml-2 mt-1">The television displays a standard QR code directly on screen.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">5</div><p class="text-sm text-gray-300 ml-2 mt-1">User opens their native iOS or Android camera app.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">6</div><p class="text-sm text-gray-300 ml-2 mt-1">User scans the displayed QR code with their mobile device.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">7</div><p class="text-sm text-gray-300 ml-2 mt-1">A secure localized web link transfers the video directly.</p></div>
+                                <div class="relative"><div class="timeline-dot">8</div><p class="text-sm text-gray-300 ml-2 mt-1">The content is immediately ready for external social media posting.</p></div>
+                            </div>
+                        </div>
+
+                        <div class="liquid-card rounded-3xl p-6 glow-switch">
+                            <div class="flex items-center mb-6">
+                                <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mr-4 shadow-inner">
+                                    <i data-lucide="wifi" class="w-4 h-4 text-gray-300"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-white">Nintendo Switch 2</h4>
+                                    <p class="text-xs text-gray-400">Local Wireless Transfer</p>
+                                </div>
+                            </div>
+                            <div class="timeline-container">
+                                <div class="timeline-line"></div>
+                                <div class="relative mb-4"><div class="timeline-dot">1</div><p class="text-sm text-gray-300 ml-2 mt-1">Navigate the operating system to the Album application.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">2</div><p class="text-sm text-gray-300 ml-2 mt-1">Select the desired screenshot or captured video.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">3</div><p class="text-sm text-gray-300 ml-2 mt-1">Choose the Send to Smartphone system prompt.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot text-yellow-300 border-yellow-500/50">4</div><p class="text-sm text-yellow-200 ml-2 mt-1">Console generates a temporary Ad-Hoc Wi-Fi network and a QR code.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">5</div><p class="text-sm text-gray-300 ml-2 mt-1">Scan the first QR code to join the local network.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot text-yellow-300 border-yellow-500/50">6</div><p class="text-sm text-gray-300 ml-2 mt-1">Console generates a second QR code for authorization.</p></div>
+                                <div class="relative mb-4"><div class="timeline-dot">7</div><p class="text-sm text-gray-300 ml-2 mt-1">Scan the second QR code to authorize the secure file transfer.</p></div>
+                                <div class="relative"><div class="timeline-dot">8</div><p class="text-sm text-gray-300 ml-2 mt-1">File transfers locally without consuming broadband data.</p></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SECTION 2: COMPARISON TABLE -->
+            <div id="content-comparison" class="hidden">
+                <div class="mb-10">
+                    <h2 class="text-2xl font-semibold mb-2 text-white">Deep Feature & Paradigm Comparison Matrix</h2>
+                    <p class="text-gray-400 font-light text-sm">A comprehensive breakdown of system design priorities, algorithmic capabilities, and psychological friction thresholds.</p>
+                </div>
+
+                <div class="overflow-x-auto liquid-card rounded-3xl border border-white/10">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-gray-400 text-xs font-semibold uppercase tracking-widest bg-black/20">
+                                <th class="p-6 w-1/4 border-b">Analysis Dimension</th>
+                                <th class="p-6 w-1/4 border-b border-l">Xbox Series X / S (Core)</th>
+                                <th class="p-6 w-1/4 border-b border-l">NEX Playground (Casual)</th>
+                                <th class="p-6 w-1/4 border-b border-l">Switch 2 (Hybrid)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-white/5 text-gray-300 font-light">
+                            
+                            <!-- Rendering -->
+                            <tr class="transition-colors duration-300 hover:bg-white/[0.02]">
+                                <td class="p-6 align-top bg-black/10">
+                                    <div class="flex items-center text-white font-medium mb-2"><i data-lucide="cpu" class="w-4 h-4 mr-2 text-blue-400"></i> Rendering Focus</div>
+                                    <span class="text-xs text-gray-500">The Algorithmic Divide</span>
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Brute-Force Ceiling</strong>
+                                    Relies on pure mathematical TFLOPS and legacy spatial upscaling equivalent to FSR1. The lack of AI tensor cores causes severe shimmering and disables Ray Tracing in high framerate modes.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Perceptual Over Pixels</strong>
+                                    Rejects the graphical arms race to focus raw mobile computing power on real-time computer vision and skeletal tracking for instant play.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">AI-Driven Fidelity</strong>
+                                    Leverages NVIDIA DLSS machine learning. The neural network hallucinates missing pixels, allowing a weaker mobile chip to output incredibly stable images.
+                                </td>
+                            </tr>
+
+                            <!-- Weight -->
+                            <tr class="transition-colors duration-300 hover:bg-white/[0.02]">
+                                <td class="p-6 align-top bg-black/10">
+                                    <div class="flex items-center text-white font-medium mb-2"><i data-lucide="scale" class="w-4 h-4 mr-2 text-purple-400"></i> Interaction Load</div>
+                                    <span class="text-xs text-gray-500">Cognitive vs. Physical</span>
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-red-300 block mb-2 font-medium">Cognitively Heavy</strong>
+                                    High Extraneous Load due to dense dashboard noise. High Germane Load is required to master complex physical gamepads and abstract button mappings.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-blue-300 block mb-2 font-medium">Physically Heavy</strong>
+                                    Zero cognitive load, but introduces the Gorilla Arm effect causing physical fatigue. Shifts friction entirely into the physical room preparation.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-yellow-300 block mb-2 font-medium">Context-Aware Scaling</strong>
+                                    Dynamically scales its Interaction Weight. The hardware chameleon design shifts from cognitively heavy Pro Controllers to lightweight localized motion via detached Joy-Cons.
+                                </td>
+                            </tr>
+
+                            <!-- Financial -->
+                            <tr class="transition-colors duration-300 hover:bg-white/[0.02]">
+                                <td class="p-6 align-top bg-black/10">
+                                    <div class="flex items-center text-white font-medium mb-2"><i data-lucide="coins" class="w-4 h-4 mr-2 text-yellow-400"></i> Financial Friction</div>
+                                    <span class="text-xs text-gray-500">Cost of Scalability</span>
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">The Controller Tax</strong>
+                                    Premium entry price. True social scalability requires purchasing expensive secondary controllers, creating severe financial friction for the Casual Family.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Infinite Scalability</strong>
+                                    Low barrier to entry. The built-in wide-angle camera tracks up to four players right out of the box, eliminating hidden hardware costs entirely.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Virtual Game Cards</strong>
+                                    Premium hardware pricing, but directly attacks digital sharing friction via local wireless verification, allowing families to lend games like physical cartridges.
+                                </td>
+                            </tr>
+
+                            <!-- Trust -->
+                            <tr class="transition-colors duration-300 hover:bg-white/[0.02]">
+                                <td class="p-6 align-top bg-black/10">
+                                    <div class="flex items-center text-white font-medium mb-2"><i data-lucide="shield" class="w-4 h-4 mr-2 text-green-400"></i> Privacy & Trust</div>
+                                    <span class="text-xs text-gray-500">Parental Controls</span>
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-red-300 block mb-2 font-medium">Opaque Digital Gating</strong>
+                                    Requires complex Microsoft family accounts and external app management. The lack of physical privacy indicators reduces trust for casual parents.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-blue-300 block mb-2 font-medium">Privacy by Design</strong>
+                                    Utilizes a physical, magnetic lens cover. Local NPU processing ensures visual data never hits global cloud servers, prioritizing immediate safety.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-yellow-300 block mb-2 font-medium">Mixed Friction</strong>
+                                    Local profile selection is frictionless, but robust digital safeguards still heavily rely on navigating the external Nintendo mobile application.
+                                </td>
+                            </tr>
+
+                            <!-- Dashboard -->
+                            <tr class="transition-colors duration-300 hover:bg-white/[0.02]">
+                                <td class="p-6 align-top bg-black/10">
+                                    <div class="flex items-center text-white font-medium mb-2"><i data-lucide="layout-dashboard" class="w-4 h-4 mr-2 text-pink-400"></i> OS Philosophy</div>
+                                    <span class="text-xs text-gray-500">Interface Density</span>
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Digital Brutalism</strong>
+                                    Acts as a dense, all-in-one control cockpit. Features over twenty interactive tiles and background streaming apps competing for user attention.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Invisible Minimalism</strong>
+                                    A hyper-specialized design that strips away general-purpose media apps entirely to keep focus exclusively on physical, communal play.
+                                </td>
+                                <td class="p-6 align-top border-l border-white/5">
+                                    <strong class="text-white block mb-2 font-medium">Utilitarian Speed</strong>
+                                    Prioritizes rapid sleep and wake states over heavy background multitasking. Serves as a highly localized, focused operating system.
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Tab Switching Logic with smooth Apple-style opacity transitions
+        function switchTab(tabName) {
+            const flowchartsTab = document.getElementById('tab-flowcharts');
+            const comparisonTab = document.getElementById('tab-comparison');
+            const flowchartsContent = document.getElementById('content-flowcharts');
+            const comparisonContent = document.getElementById('content-comparison');
+
+            if (tabName === 'flowcharts') {
+                flowchartsTab.className = 'segment-btn segment-active';
+                comparisonTab.className = 'segment-btn';
+                
+                comparisonContent.style.opacity = '0';
+                comparisonContent.style.transform = 'scale(0.98)';
+                comparisonContent.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                
+                setTimeout(() => {
+                    comparisonContent.classList.add('hidden');
+                    flowchartsContent.classList.remove('hidden');
+                    
+                    flowchartsContent.style.opacity = '0';
+                    flowchartsContent.style.transform = 'scale(0.98)';
+                    flowchartsContent.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    
+                    // Force reflow
+                    void flowchartsContent.offsetWidth;
+                    
+                    flowchartsContent.style.opacity = '1';
+                    flowchartsContent.style.transform = 'scale(1)';
+                }, 200);
+            } else {
+                comparisonTab.className = 'segment-btn segment-active';
+                flowchartsTab.className = 'segment-btn';
+                
+                flowchartsContent.style.opacity = '0';
+                flowchartsContent.style.transform = 'scale(0.98)';
+                flowchartsContent.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                
+                setTimeout(() => {
+                    flowchartsContent.classList.add('hidden');
+                    comparisonContent.classList.remove('hidden');
+                    
+                    comparisonContent.style.opacity = '0';
+                    comparisonContent.style.transform = 'scale(0.98)';
+                    comparisonContent.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    
+                    // Force reflow
+                    void comparisonContent.offsetWidth;
+                    
+                    comparisonContent.style.opacity = '1';
+                    comparisonContent.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+    </script>
+</body>
+</html>
